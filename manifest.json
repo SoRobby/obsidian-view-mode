@@ -1,11 +1,10 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
+	"id": "view-mode",
+	"name": "View Mode",
 	"version": "1.0.0",
-	"minAppVersion": "0.15.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"minAppVersion": "1.4.0",
+	"description": "Automatically control file view modes (read-only, edit, locked) based on YAML frontmatter or folder settings. Enforces view modes and prevents unauthorized editing of locked files.",
+	"author": "SoRobby",
+	"authorUrl": "https://github.com/SoRobby/obsidian-view-mode",
 	"isDesktopOnly": false
 }
