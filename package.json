@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-sample-plugin",
+	"name": "obsidian-view-mode",
 	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"description": "Automatically control file view modes (read-only, edit, locked) based on YAML frontmatter or folder settings. Enforces view modes and prevents unauthorized editing of locked files",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
