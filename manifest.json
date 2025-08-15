@@ -5,6 +5,5 @@
 	"minAppVersion": "1.4.0",
 	"description": "Automatically control file view modes (read-only, edit, locked) based on YAML frontmatter or folder settings. Enforces view modes and prevents unauthorized editing of locked files.",
 	"author": "SoRobby",
-	"authorUrl": "https://github.com/SoRobby/obsidian-view-mode",
 	"isDesktopOnly": false
 }
