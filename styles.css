@@ -1,8 +1,194 @@
-/*
+/* View Mode Plugin Styles */
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+/* Edit button visibility control */
+.view-mode-hidden {
+	display: none !important;
+}
 
-If your plugin does not need CSS, delete this file.
+.view-mode-visible {
+	display: block !important;
+}
 
-*/
+/* Modal styling */
+.unlock-file-modal {
+	padding: 1rem;
+}
+
+.unlock-file-modal h2 {
+	margin-top: 0;
+	margin-bottom: 1rem;
+	color: var(--text-normal);
+	font-size: 1.5rem;
+	font-weight: 600;
+}
+
+.unlock-file-modal p {
+	margin-bottom: 1rem;
+	color: var(--text-normal);
+	line-height: 1.5;
+}
+
+.unlock-file-modal .modal-subnote {
+	font-size: 0.8em;
+	opacity: 0.8;
+	color: var(--text-muted);
+}
+
+.modal-button-container {
+	display: flex;
+	gap: 0.5rem;
+	justify-content: flex-end;
+	margin-top: 1.5rem;
+}
+
+.modal-button-container button {
+	padding: 0.5rem 1rem;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	background: var(--background-primary);
+	color: var(--text-normal);
+	cursor: pointer;
+	transition: all 0.2s ease;
+	font-size: 0.9rem;
+	font-weight: 500;
+	min-width: 80px;
+}
+
+.modal-button-container button:hover {
+	background: var(--background-secondary);
+	border-color: var(--background-modifier-border-hover);
+}
+
+.modal-button-container button.mod-cta {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border-color: var(--interactive-accent);
+}
+
+.modal-button-container button.mod-cta:hover {
+	background: var(--interactive-accent-hover);
+	border-color: var(--interactive-accent-hover);
+}
+
+/* Settings styling */
+.setting-item-description {
+	color: var(--text-muted);
+	font-size: 0.9em;
+	margin-bottom: 1rem;
+	line-height: 1.4;
+}
+
+/* Settings section headers */
+.view-mode-settings h3 {
+	color: var(--text-normal);
+	font-size: 1.3rem;
+	font-weight: 600;
+	margin-top: 1.5rem;
+	margin-bottom: 1rem;
+	border-bottom: 1px solid var(--background-modifier-border);
+	padding-bottom: 0.5rem;
+}
+
+.view-mode-settings h4 {
+	color: var(--text-normal);
+	font-size: 1.1rem;
+	font-weight: 600;
+	margin-top: 1.5rem;
+	margin-bottom: 1rem;
+}
+
+/* Basic settings styling */
+.basic-settings {
+	margin-bottom: 2rem;
+	padding: 1rem;
+	background: var(--background-secondary);
+	border-radius: 6px;
+	border: 1px solid var(--background-modifier-border);
+}
+
+.basic-settings .setting-item {
+	margin-bottom: 1rem;
+}
+
+.basic-settings .setting-item:last-child {
+	margin-bottom: 0;
+}
+
+/* Folder view mode settings */
+.folder-view-mode-item {
+	margin-bottom: 1rem;
+	padding: 1rem;
+	background: var(--background-secondary);
+	border-radius: 6px;
+	border: 1px solid var(--background-modifier-border);
+}
+
+.folder-view-mode-item .setting-item {
+	margin-bottom: 0.5rem;
+}
+
+.folder-view-mode-item .setting-item:last-child {
+	margin-bottom: 0;
+}
+
+/* Add folder button */
+.add-folder-button {
+	margin-top: 1rem;
+}
+
+.add-folder-button button {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border: 1px solid var(--interactive-accent);
+	border-radius: 4px;
+	padding: 0.5rem 1rem;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	font-weight: 500;
+}
+
+.add-folder-button button:hover {
+	background: var(--interactive-accent-hover);
+	border-color: var(--interactive-accent-hover);
+}
+
+/* Remove folder button */
+.remove-folder-button {
+	margin-left: 0.5rem;
+}
+
+.remove-folder-button button {
+	background: var(--background-modifier-error);
+	color: var(--text-on-accent);
+	border: 1px solid var(--background-modifier-error);
+	border-radius: 4px;
+	padding: 0.25rem 0.5rem;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	font-size: 0.8rem;
+}
+
+.remove-folder-button button:hover {
+	background: var(--background-modifier-error-hover);
+	border-color: var(--background-modifier-error-hover);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+	.modal-button-container {
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+	
+	.modal-button-container button {
+		width: 100%;
+	}
+	
+	.folder-view-mode-item {
+		padding: 0.75rem;
+	}
+	
+	.basic-settings {
+		padding: 0.75rem;
+	}
+}

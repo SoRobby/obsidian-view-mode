@@ -1,28 +1,72 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, WorkspaceLeaf } from 'obsidian';
+import { App, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
 
-// Remember to rename these classes and interfaces!
-
-interface MyPluginSettings {
-	mySetting: string;
+interface ViewModeSettings {
 	metaPropertyName: string;
 	showModeChangeNotification: boolean;
 	folderViewModes: FolderViewMode[];
 }
 
+type ViewMode = 'read' | 'edit' | 'edit-source' | 'edit-preview' | 'lock';
+
 interface FolderViewMode {
 	folderPath: string;
-	viewMode: string;
+	viewMode: ViewMode;
 }
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default',
+// Extended MarkdownView interface to support our custom properties
+interface ExtendedMarkdownView extends MarkdownView {
+	_originalSetState?: (state: ViewState, result: ViewStateResult) => Promise<void>;
+}
+
+// View state types
+interface ViewState {
+	mode?: 'preview' | 'source';
+	source?: boolean;
+	[key: string]: unknown; // Allow other properties with unknown type
+}
+
+interface ViewStateResult {
+	history: boolean;
+	[key: string]: unknown; // Allow other properties with unknown type
+}
+
+// Types for Obsidian UI components
+interface TextComponent {
+	setPlaceholder(placeholder: string): TextComponent;
+	setValue(value: string): TextComponent;
+	onChange(callback: (value: string) => void): TextComponent;
+}
+
+interface DropdownComponent {
+	addOption(value: string, display: string): DropdownComponent;
+	setValue(value: string): DropdownComponent;
+	onChange(callback: (value: string) => void): DropdownComponent;
+}
+
+interface ButtonComponent {
+	setButtonText(text: string): ButtonComponent;
+	onClick(callback: () => void): ButtonComponent;
+}
+
+interface ExtraButtonComponent {
+	setIcon(icon: string): ExtraButtonComponent;
+	setTooltip(tooltip: string): ExtraButtonComponent;
+	onClick(callback: () => void): ExtraButtonComponent;
+}
+
+interface ToggleComponent {
+	setValue(value: boolean): ToggleComponent;
+	onChange(callback: (value: boolean) => void): ToggleComponent;
+}
+
+const DEFAULT_SETTINGS: ViewModeSettings = {
 	metaPropertyName: 'view_mode',
 	showModeChangeNotification: false,
 	folderViewModes: []
 }
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+export default class ViewModePlugin extends Plugin {
+	settings: ViewModeSettings;
 	private livePreviewConfig: boolean = true;
 	private lockedFiles: Set<string> = new Set();
 	private temporarilyUnlockedFiles: Set<string> = new Set();
@@ -59,7 +103,7 @@ export default class MyPlugin extends Plugin {
 		});
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+		this.addSettingTab(new ViewModeSettingTab(this.app, this));
 
 		// Register file-open listener to set view mode immediately when file opens
 		this.registerEvent(
@@ -69,11 +113,14 @@ export default class MyPlugin extends Plugin {
 				// Use a small delay to ensure the view is ready
 				setTimeout(async () => {
 					const fileCache = this.app.metadataCache.getFileCache(file);
-					let viewMode: string | undefined;
+					let viewMode: ViewMode | undefined;
 
 					// First check for frontmatter view mode
 					if (fileCache && fileCache.frontmatter) {
-						viewMode = fileCache.frontmatter[this.settings.metaPropertyName];
+						const frontmatterValue = fileCache.frontmatter[this.settings.metaPropertyName];
+						if (this.isValidViewMode(frontmatterValue)) {
+							viewMode = frontmatterValue;
+						}
 					}
 
 					// If no frontmatter view mode, check for folder-specific view mode
@@ -192,9 +239,6 @@ export default class MyPlugin extends Plugin {
 				}
 			}
 		});
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
 	}
 
 	async refreshEditConfig() {
@@ -207,7 +251,7 @@ export default class MyPlugin extends Plugin {
 		}
 	}
 
-	getFolderViewMode(filePath: string): string | undefined {
+	getFolderViewMode(filePath: string): ViewMode | undefined {
 		// Remove the file name to get the folder path
 		const folderPath = filePath.substring(0, filePath.lastIndexOf('/'));
 
@@ -221,7 +265,11 @@ export default class MyPlugin extends Plugin {
 		return undefined;
 	}
 
-	async setViewMode(view: MarkdownView, viewMode: string) {
+	private isValidViewMode(value: unknown): value is ViewMode {
+		return typeof value === 'string' && ['read', 'edit', 'edit-source', 'edit-preview', 'lock'].includes(value);
+	}
+
+	async setViewMode(view: MarkdownView, viewMode: ViewMode) {
 		const mode = viewMode.toLowerCase();
 		let state = view.getState();
 
@@ -301,11 +349,14 @@ export default class MyPlugin extends Plugin {
 
 		// Also check if the file should be locked based on frontmatter or folder settings
 		const fileCache = this.app.metadataCache.getFileCache(activeView.file);
-		let viewMode: string | undefined;
+		let viewMode: ViewMode | undefined;
 
 		// Check for frontmatter view mode
 		if (fileCache && fileCache.frontmatter) {
-			viewMode = fileCache.frontmatter[this.settings.metaPropertyName];
+			const frontmatterValue = fileCache.frontmatter[this.settings.metaPropertyName];
+			if (this.isValidViewMode(frontmatterValue)) {
+				viewMode = frontmatterValue;
+			}
 		}
 
 		// If no frontmatter view mode, check for folder-specific view mode
@@ -356,21 +407,22 @@ export default class MyPlugin extends Plugin {
 			const buttonEl = button as HTMLElement;
 			if (isLocked && !isTemporarilyUnlocked) {
 				// Hide edit buttons for locked files
-				buttonEl.style.display = 'none';
+				buttonEl.classList.add('view-mode-hidden');
 			} else {
 				// Show edit buttons for unlocked files
-				buttonEl.style.display = '';
+				buttonEl.classList.remove('view-mode-hidden');
 			}
 		});
 	}
 
 	patchViewStateMethod(view: MarkdownView) {
 		// Store the original setState method
-		if (!(view as any)._originalSetState) {
-			(view as any)._originalSetState = view.setState.bind(view);
+		const extendedView = view as ExtendedMarkdownView;
+		if (!extendedView._originalSetState) {
+			extendedView._originalSetState = view.setState.bind(view);
 
 			// Override the setState method
-			view.setState = (state: any, result: any) => {
+			view.setState = async (state: ViewState, result: ViewStateResult) => {
 				const filePath = view.file?.path;
 				if (filePath && this.lockedFiles.has(filePath) && !this.temporarilyUnlockedFiles.has(filePath)) {
 					// If the file is locked and not temporarily unlocked, prevent mode changes
@@ -382,7 +434,7 @@ export default class MyPlugin extends Plugin {
 				}
 
 				// Call the original setState method
-				return (view as any)._originalSetState(state, result);
+				return await extendedView._originalSetState!(state, result);
 			};
 		}
 	}
@@ -412,11 +464,14 @@ export default class MyPlugin extends Plugin {
 			const view = leaf.view as MarkdownView;
 			if (view && view.file) {
 				const fileCache = this.app.metadataCache.getFileCache(view.file);
-				let viewMode: string | undefined;
+				let viewMode: ViewMode | undefined;
 
 				// Check for frontmatter view mode
 				if (fileCache && fileCache.frontmatter) {
-					viewMode = fileCache.frontmatter[this.settings.metaPropertyName];
+					const frontmatterValue = fileCache.frontmatter[this.settings.metaPropertyName];
+					if (this.isValidViewMode(frontmatterValue)) {
+						viewMode = frontmatterValue;
+					}
 				}
 
 				// If no frontmatter view mode, check for folder-specific view mode
@@ -455,27 +510,11 @@ export default class MyPlugin extends Plugin {
 	}
 }
 
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
-
-	onOpen() {
-		const { contentEl } = this;
-		contentEl.setText('Woah!');
-	}
-
-	onClose() {
-		const { contentEl } = this;
-		contentEl.empty();
-	}
-}
-
 class UnlockFileModal extends Modal {
-	plugin: MyPlugin;
+	plugin: ViewModePlugin;
 	file: TFile;
 
-	constructor(app: App, plugin: MyPlugin, file: TFile) {
+	constructor(app: App, plugin: ViewModePlugin, file: TFile) {
 		super(app);
 		this.plugin = plugin;
 		this.file = file;
@@ -497,7 +536,7 @@ class UnlockFileModal extends Modal {
 		// Add subnote
 		contentEl.createEl('p', {
 			text: 'The file will return to its locked state when you navigate away.',
-			attr: { style: 'font-size: 0.8em; opacity: 0.8;' }
+			cls: 'modal-subnote'
 		});
 
 		// Create button container
@@ -542,10 +581,10 @@ class UnlockFileModal extends Modal {
 	}
 }
 
-class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+class ViewModeSettingTab extends PluginSettingTab {
+	plugin: ViewModePlugin;
 
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: ViewModePlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
@@ -554,6 +593,7 @@ class SampleSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 
 		containerEl.empty();
+		containerEl.addClass('view-mode-settings');
 
 		// Folder view mode settings
 		containerEl.createEl('h3', { text: 'File View Mode Settings' });
@@ -565,10 +605,10 @@ class SampleSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Meta property name')
 			.setDesc('The YAML frontmatter property name used to control view mode. Default is "view_mode". Examples: "ViewStyle", "view-format", "mode", etc.')
-			.addText(text => text
+			.addText((text: TextComponent) => text
 				.setPlaceholder('view_mode')
 				.setValue(this.plugin.settings.metaPropertyName)
-				.onChange(async (value) => {
+				.onChange(async (value: string) => {
 					this.plugin.settings.metaPropertyName = value;
 					await this.plugin.saveSettings();
 				}));
@@ -576,9 +616,9 @@ class SampleSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Show mode change notification')
 			.setDesc('When enabled, shows a notification when the view mode changes. When disabled, mode changes happen silently without notifications.')
-			.addToggle(toggle => toggle
+			.addToggle((toggle: ToggleComponent) => toggle
 				.setValue(this.plugin.settings.showModeChangeNotification)
-				.onChange(async (value) => {
+				.onChange(async (value: boolean) => {
 					this.plugin.settings.showModeChangeNotification = value;
 					await this.plugin.saveSettings();
 				}));
@@ -594,25 +634,25 @@ class SampleSettingTab extends PluginSettingTab {
 		this.plugin.settings.folderViewModes.forEach((folderViewMode, index) => {
 			const folderSetting = new Setting(containerEl)
 				.setName(`Folder ${index + 1}`)
-				.addText(text => text
+				.addText((text: TextComponent) => text
 					.setPlaceholder('e.g., Daily Notes, Projects/Work')
 					.setValue(folderViewMode.folderPath)
-					.onChange(async (value) => {
+					.onChange(async (value: string) => {
 						folderViewMode.folderPath = value;
 						await this.plugin.saveSettings();
 					}))
-				.addDropdown(dropdown => dropdown
+				.addDropdown((dropdown: DropdownComponent) => dropdown
 					.addOption('read', 'Read Only')
 					.addOption('edit', 'Edit (User Preference)')
 					.addOption('edit-source', 'Edit Source')
 					.addOption('edit-preview', 'Edit Preview')
 					.addOption('lock', 'Lock (Cannot be modified)')
 					.setValue(folderViewMode.viewMode)
-					.onChange(async (value) => {
-						folderViewMode.viewMode = value;
+					.onChange(async (value: string) => {
+						folderViewMode.viewMode = value as ViewMode;
 						await this.plugin.saveSettings();
 					}))
-				.addExtraButton(button => button
+				.addExtraButton((button: ExtraButtonComponent) => button
 					.setIcon('trash')
 					.setTooltip('Remove folder')
 					.onClick(async () => {
@@ -620,13 +660,16 @@ class SampleSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 						this.display(); // Refresh the settings display
 					}));
+			
+			// Add CSS class to the setting container
+			folderSetting.settingEl.addClass('folder-view-mode-item');
 		});
 
 		// Add new folder button
-		new Setting(containerEl)
+		const addFolderSetting = new Setting(containerEl)
 			.setName('Add Folder')
 			.setDesc('Add a new folder with a specific view mode')
-			.addButton(button => button
+			.addButton((button: ButtonComponent) => button
 				.setButtonText('+ Add folder')
 				.onClick(async () => {
 					this.plugin.settings.folderViewModes.push({
@@ -636,5 +679,8 @@ class SampleSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 					this.display(); // Refresh the settings display
 				}));
+		
+		// Add CSS class to the add folder setting
+		addFolderSetting.settingEl.addClass('add-folder-button');
 	}
 }
