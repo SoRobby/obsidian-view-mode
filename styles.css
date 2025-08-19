@@ -152,6 +152,34 @@
 	border-color: var(--interactive-accent-hover);
 }
 
+/* Custom YAML property names section */
+.custom-yaml-section {
+	margin-bottom: 2rem;
+	padding: 1rem;
+	background: var(--background-secondary);
+	border-radius: 6px;
+	border: 1px solid var(--background-modifier-border);
+}
+
+.custom-yaml-section .setting-item {
+	margin-bottom: 1rem;
+}
+
+.custom-yaml-section .setting-item:last-child {
+	margin-bottom: 0;
+}
+
+.custom-yaml-section .setting-item-name {
+	font-weight: 600;
+	color: var(--text-normal);
+}
+
+.custom-yaml-section .setting-item-description {
+	font-size: 0.85em;
+	color: var(--text-muted);
+	margin-top: 0.25rem;
+}
+
 /* Remove folder button */
 .remove-folder-button {
 	margin-left: 0.5rem;

@@ -140,6 +140,38 @@ ViewStyle: edit-preview
 ---
 ```
 
+### Example 6: Custom YAML Property Values
+You can also customize the actual values used in your YAML frontmatter:
+
+1. Go to **Settings → Community Plugins → View Mode → Custom YAML Property Names**
+2. Configure custom values for each view mode:
+
+**Default Values:**
+- `read` → Read-only mode
+- `edit` → Edit mode (user preference)
+- `edit-source` → Source editing mode
+- `edit-preview` → Live preview editing mode
+- `lock` → Locked mode
+
+**Custom Value Examples:**
+```yaml
+---
+view_mode: read_only          # Instead of "read"
+view_mode: editing            # Instead of "edit"
+view_mode: source_mode        # Instead of "edit-source"
+view_mode: live_edit          # Instead of "edit-preview"
+view_mode: protected          # Instead of "lock"
+---
+```
+
+**Advanced Configuration:**
+You can set completely custom values like:
+- `read_only`, `viewing`, `display_only`
+- `editing`, `modify`, `changeable`
+- `source_editing`, `raw_edit`, `code_mode`
+- `live_editing`, `preview_edit`, `rich_edit`
+- `locked`, `protected`, `immutable`, `final`
+
 ## Commands
 
 The plugin adds several commands to Obsidian:
@@ -176,6 +208,12 @@ Contributions are welcome! Please feel free to submit issues and pull requests.
 - **Funding**: Support development through the funding links in the plugin
 
 ## Changelog
+
+### Version 1.1.0
+- Added custom YAML property value configuration
+- Users can now define custom names for each view mode
+- Enhanced settings interface with organized sections
+- Improved visual styling for settings
 
 ### Version 1.0.0
 - Initial release with core view mode functionality

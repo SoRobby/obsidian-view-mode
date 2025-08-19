@@ -4,6 +4,14 @@ interface ViewModeSettings {
 	metaPropertyName: string;
 	showModeChangeNotification: boolean;
 	folderViewModes: FolderViewMode[];
+	// Custom YAML property names for each view mode
+	customYamlNames: {
+		read: string;
+		edit: string;
+		editSource: string;
+		editPreview: string;
+		lock: string;
+	};
 }
 
 type ViewMode = 'read' | 'edit' | 'edit-source' | 'edit-preview' | 'lock';
@@ -62,7 +70,15 @@ interface ToggleComponent {
 const DEFAULT_SETTINGS: ViewModeSettings = {
 	metaPropertyName: 'view_mode',
 	showModeChangeNotification: false,
-	folderViewModes: []
+	folderViewModes: [],
+	// Custom YAML property names for each view mode
+	customYamlNames: {
+		read: 'read_only',
+		edit: 'edit_mode',
+		editSource: 'edit_source',
+		editPreview: 'edit_preview',
+		lock: 'locked'
+	}
 }
 
 export default class ViewModePlugin extends Plugin {
@@ -119,7 +135,7 @@ export default class ViewModePlugin extends Plugin {
 					if (fileCache && fileCache.frontmatter) {
 						const frontmatterValue = fileCache.frontmatter[this.settings.metaPropertyName];
 						if (this.isValidViewMode(frontmatterValue)) {
-							viewMode = frontmatterValue;
+							viewMode = this.convertYamlValueToViewMode(frontmatterValue as string);
 						}
 					}
 
@@ -266,7 +282,28 @@ export default class ViewModePlugin extends Plugin {
 	}
 
 	private isValidViewMode(value: unknown): value is ViewMode {
-		return typeof value === 'string' && ['read', 'edit', 'edit-source', 'edit-preview', 'lock'].includes(value);
+		// Check if the value matches any of the custom YAML property names
+		if (typeof value === 'string') {
+			const customNames = this.settings.customYamlNames;
+			return value === customNames.read || 
+				   value === customNames.edit || 
+				   value === customNames.editSource || 
+				   value === customNames.editPreview || 
+				   value === customNames.lock;
+		}
+		return false;
+	}
+
+	private convertYamlValueToViewMode(value: string): ViewMode | undefined {
+		const customNames = this.settings.customYamlNames;
+		
+		if (value === customNames.read) return 'read';
+		if (value === customNames.edit) return 'edit';
+		if (value === customNames.editSource) return 'edit-source';
+		if (value === customNames.editPreview) return 'edit-preview';
+		if (value === customNames.lock) return 'lock';
+		
+		return undefined;
 	}
 
 	async setViewMode(view: MarkdownView, viewMode: ViewMode) {
@@ -355,7 +392,7 @@ export default class ViewModePlugin extends Plugin {
 		if (fileCache && fileCache.frontmatter) {
 			const frontmatterValue = fileCache.frontmatter[this.settings.metaPropertyName];
 			if (this.isValidViewMode(frontmatterValue)) {
-				viewMode = frontmatterValue;
+				viewMode = this.convertYamlValueToViewMode(frontmatterValue as string);
 			}
 		}
 
@@ -470,7 +507,7 @@ export default class ViewModePlugin extends Plugin {
 				if (fileCache && fileCache.frontmatter) {
 					const frontmatterValue = fileCache.frontmatter[this.settings.metaPropertyName];
 					if (this.isValidViewMode(frontmatterValue)) {
-						viewMode = frontmatterValue;
+						viewMode = this.convertYamlValueToViewMode(frontmatterValue as string);
 					}
 				}
 
@@ -610,6 +647,69 @@ class ViewModeSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.metaPropertyName)
 				.onChange(async (value: string) => {
 					this.plugin.settings.metaPropertyName = value;
+					await this.plugin.saveSettings();
+				}));
+
+		// Custom YAML property names section
+		const customYamlSection = containerEl.createEl('div', { cls: 'custom-yaml-section' });
+		customYamlSection.createEl('h4', { text: 'Custom YAML Property Names' });
+		customYamlSection.createEl('p', {
+			text: 'Configure custom YAML property values for each view mode. These values will be used in your frontmatter instead of the default values.',
+			cls: 'setting-item-description'
+		});
+
+		new Setting(customYamlSection)
+			.setName('Read Only Mode')
+			.setDesc('YAML value for read-only mode')
+			.addText((text: TextComponent) => text
+				.setPlaceholder('read')
+				.setValue(this.plugin.settings.customYamlNames.read)
+				.onChange(async (value: string) => {
+					this.plugin.settings.customYamlNames.read = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(customYamlSection)
+			.setName('Edit Mode')
+			.setDesc('YAML value for edit mode (user preference)')
+			.addText((text: TextComponent) => text
+				.setPlaceholder('edit')
+				.setValue(this.plugin.settings.customYamlNames.edit)
+				.onChange(async (value: string) => {
+					this.plugin.settings.customYamlNames.edit = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(customYamlSection)
+			.setName('Edit Source Mode')
+			.setDesc('YAML value for source edit mode')
+			.addText((text: TextComponent) => text
+				.setPlaceholder('edit-source')
+				.setValue(this.plugin.settings.customYamlNames.editSource)
+				.onChange(async (value: string) => {
+					this.plugin.settings.customYamlNames.editSource = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(customYamlSection)
+			.setName('Edit Preview Mode')
+			.setDesc('YAML value for live preview edit mode')
+			.addText((text: TextComponent) => text
+				.setPlaceholder('edit-preview')
+				.setValue(this.plugin.settings.customYamlNames.editPreview)
+				.onChange(async (value: string) => {
+					this.plugin.settings.customYamlNames.editPreview = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(customYamlSection)
+			.setName('Lock Mode')
+			.setDesc('YAML value for locked mode')
+			.addText((text: TextComponent) => text
+				.setPlaceholder('lock')
+				.setValue(this.plugin.settings.customYamlNames.lock)
+				.onChange(async (value: string) => {
+					this.plugin.settings.customYamlNames.lock = value;
 					await this.plugin.saveSettings();
 				}));
 
