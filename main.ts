@@ -208,7 +208,6 @@ export default class ViewModePlugin extends Plugin {
 						if (isLocked && !isTemporarilyUnlocked) {
 							const currentState = activeView.getState();
 							if (currentState.mode !== 'preview') {
-								console.log(`Preventing mode change for locked file: ${activeView.file.basename}`);
 								currentState.mode = 'preview';
 								activeView.setState(currentState, { history: false });
 							}
@@ -310,8 +309,6 @@ export default class ViewModePlugin extends Plugin {
 		const mode = viewMode.toLowerCase();
 		let state = view.getState();
 
-		console.log(`Setting view mode for ${view.file?.basename} to: ${mode}`);
-
 		// Patch the view's setState method to prevent mode changes for locked files
 		this.patchViewStateMethod(view);
 
@@ -348,7 +345,6 @@ export default class ViewModePlugin extends Plugin {
 				state.mode = 'preview';
 				const filePath = view.file?.path || '';
 				this.lockedFiles.add(filePath);
-				console.log(`Locked file: ${filePath}. Total locked files: ${this.lockedFiles.size}`);
 				if (this.settings.showModeChangeNotification) {
 					new Notice(`File "${view.file?.basename}" is locked and cannot be modified`);
 				}
@@ -374,10 +370,8 @@ export default class ViewModePlugin extends Plugin {
 		}
 
 		if (this.lockedFiles.has(filePath)) {
-			console.log(`Checking locked file: ${activeView.file.basename}, current mode: ${currentState.mode}`);
 			if (currentState.mode !== 'preview') {
 				// File is locked but not in preview mode, force it back to preview
-				console.log(`Forcing ${activeView.file.basename} back to preview mode`);
 				currentState.mode = 'preview';
 				activeView.setState(currentState, { history: false });
 				new Notice(`File "${activeView.file.basename}" is locked and cannot be modified`);
@@ -424,7 +418,6 @@ export default class ViewModePlugin extends Plugin {
 	handleLeafChange() {
 		// Re-lock any temporarily unlocked files when navigating away
 		if (this.temporarilyUnlockedFiles.size > 0) {
-			console.log(`Re-locking ${this.temporarilyUnlockedFiles.size} temporarily unlocked files`);
 			this.temporarilyUnlockedFiles.clear();
 		}
 		this.updateEditButtonsVisibility();
@@ -464,7 +457,6 @@ export default class ViewModePlugin extends Plugin {
 				if (filePath && this.lockedFiles.has(filePath) && !this.temporarilyUnlockedFiles.has(filePath)) {
 					// If the file is locked and not temporarily unlocked, prevent mode changes
 					if (state.mode && state.mode !== 'preview') {
-						console.log(`Blocking setState for locked file: ${view.file?.basename}`);
 						state.mode = 'preview';
 						new Notice(`File "${view.file?.basename}" is locked and cannot be modified`);
 					}
@@ -479,7 +471,6 @@ export default class ViewModePlugin extends Plugin {
 	unlockFile(filePath: string) {
 		this.lockedFiles.delete(filePath);
 		this.temporarilyUnlockedFiles.add(filePath);
-		console.log(`Unlocked file: ${filePath}. Remaining locked files: ${this.lockedFiles.size}, temporarily unlocked: ${this.temporarilyUnlockedFiles.size}`);
 
 		// Switch the file to edit mode
 		const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
